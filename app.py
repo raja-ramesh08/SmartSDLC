@@ -79,6 +79,22 @@ def policy_summarization(pdf_file, policy_text):
     return generate_response(summary_prompt, max_length=1200)
 
 
+def carbon_footprint_estimator(activity_details):
+    prompt = (
+        f"Estimate the carbon footprint (in kg CO₂ per month) based on the following lifestyle details: "
+        f"{activity_details}. Then, suggest ways to reduce the footprint effectively."
+    )
+    return generate_response(prompt, max_length=800)
+
+
+def green_tech_ideas(sector):
+    prompt = (
+        f"Suggest innovative eco-friendly and sustainable technology ideas for the sector: {sector}. "
+        f"Include practical applications, scalability, and environmental impact."
+    )
+    return generate_response(prompt, max_length=900)
+
+
 # ------------------ Gradio UI ------------------
 with gr.Blocks() as app:
     gr.Markdown("# 🌱 Eco Assistant & Policy Analyzer")
@@ -131,4 +147,45 @@ with gr.Blocks() as app:
                 outputs=summary_output
             )
 
+        # Tab 3: Carbon Footprint Estimator
+        with gr.TabItem("Carbon Footprint Estimator"):
+            with gr.Row():
+                with gr.Column():
+                    activity_input = gr.Textbox(
+                        label="Enter your daily/weekly activities",
+                        placeholder="e.g., I drive 20km daily, use AC 8 hours/day, eat meat 3 times/week...",
+                        lines=5
+                    )
+                    footprint_btn = gr.Button("Estimate Carbon Footprint")
+
+                with gr.Column():
+                    footprint_output = gr.Textbox(label="Carbon Footprint & Suggestions", lines=15)
+
+            footprint_btn.click(
+                carbon_footprint_estimator,
+                inputs=activity_input,
+                outputs=footprint_output
+            )
+
+        # Tab 4: Green Technology Ideas
+        with gr.TabItem("Green Technology Ideas"):
+            with gr.Row():
+                with gr.Column():
+                    sector_input = gr.Textbox(
+                        label="Enter a sector/industry",
+                        placeholder="e.g., agriculture, transportation, fashion, construction...",
+                        lines=2
+                    )
+                    ideas_btn = gr.Button("Generate Green Tech Ideas")
+
+                with gr.Column():
+                    ideas_output = gr.Textbox(label="Eco-Friendly Innovation Ideas", lines=15)
+
+            ideas_btn.click(
+                green_tech_ideas,
+                inputs=sector_input,
+                outputs=ideas_output
+            )
+
+# Launch the app
 app.launch(share=True)
