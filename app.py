@@ -1,8 +1,7 @@
 import gradio as gr
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from pypdf import PdfReader   # ✅ using pypdf instead of PyPDF2
-
+from pypdf import PdfReader
 
 # ------------------ Load Model ------------------
 model_name = "ibm-granite/granite-3.3-2b-instruct"
@@ -17,14 +16,11 @@ model = AutoModelForCausalLM.from_pretrained(
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-
 # ------------------ Core Functions ------------------
 def generate_response(prompt, max_length=1024):
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
-
     if torch.cuda.is_available():
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
-
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
@@ -33,14 +29,11 @@ def generate_response(prompt, max_length=1024):
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
-    
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response = response.replace(prompt, "").strip()
     return response
 
-
 def extract_text_from_pdf(pdf_file):
-    """Read text from an uploaded PDF using pypdf"""
     if pdf_file is None:
         return ""
     try:
@@ -54,14 +47,12 @@ def extract_text_from_pdf(pdf_file):
     except Exception as e:
         return f"Error reading PDF: {str(e)}"
 
-
 def eco_tips_generator(problem_keywords):
     prompt = (
         f"Generate practical and actionable eco-friendly tips for sustainable living "
         f"related to: {problem_keywords}. Provide specific solutions and suggestions."
     )
     return generate_response(prompt, max_length=1000)
-
 
 def policy_summarization(pdf_file, policy_text):
     if pdf_file is not None:
@@ -75,9 +66,7 @@ def policy_summarization(pdf_file, policy_text):
             f"Summarize the following policy document and extract the most important points, "
             f"key provisions, and implications:\n\n{policy_text}"
         )
-    
     return generate_response(summary_prompt, max_length=1200)
-
 
 def carbon_footprint_estimator(activity_details):
     prompt = (
@@ -86,7 +75,6 @@ def carbon_footprint_estimator(activity_details):
     )
     return generate_response(prompt, max_length=800)
 
-
 def green_tech_ideas(sector):
     prompt = (
         f"Suggest innovative eco-friendly and sustainable technology ideas for the sector: {sector}. "
@@ -94,14 +82,13 @@ def green_tech_ideas(sector):
     )
     return generate_response(prompt, max_length=900)
 
-
 # ------------------ Gradio UI ------------------
 with gr.Blocks() as app:
-    gr.Markdown("# 🌱 Eco Assistant & Policy Analyzer")
+    gr.Markdown("# 𝙂𝙧𝙚𝙚𝙣𝙎𝙥𝙖𝙧𝙠 𝘼𝙄")
 
     with gr.Tabs():
         # Tab 1: Eco Tips
-        with gr.TabItem("Eco Tips Generator"):
+        with gr.TabItem("𝙀𝙘𝙤𝙇𝙞𝙛𝙚 𝙂𝙪𝙞𝙙𝙚"):
             with gr.Row():
                 with gr.Column():
                     keywords_input = gr.Textbox(
@@ -110,10 +97,12 @@ with gr.Blocks() as app:
                         lines=3
                     )
                     generate_tips_btn = gr.Button("Generate Eco Tips")
-
                 with gr.Column():
-                    tips_output = gr.Textbox(label="Sustainable Living Tips", lines=15)
-
+                    tips_output = gr.Textbox(label="Sustainable Living Tips", lines=10, elem_id="tips_box")
+                    tips_copy = gr.HTML("""
+                        <button onclick="navigator.clipboard.writeText(
+                            document.querySelector('#tips_box textarea').value)"> Copy</button>
+                    """)
             generate_tips_btn.click(
                 eco_tips_generator,
                 inputs=keywords_input,
@@ -121,26 +110,22 @@ with gr.Blocks() as app:
             )
 
         # Tab 2: Policy Summarization
-        with gr.TabItem("Policy Summarization"):
+        with gr.TabItem("𝙋𝙤𝙡𝙞𝙘𝙮 𝙎𝙣𝙖𝙥𝙨𝙝𝙤𝙩"):
             with gr.Row():
                 with gr.Column():
-                    pdf_upload = gr.File(
-                        label="Upload Policy PDF",
-                        file_types=[".pdf"]
-                    )
+                    pdf_upload = gr.File(label="Upload Policy PDF", file_types=[".pdf"])
                     policy_text_input = gr.Textbox(
                         label="Or paste policy text here",
                         placeholder="Paste policy document text...",
                         lines=5
                     )
                     summarize_btn = gr.Button("Summarize Policy")
-
                 with gr.Column():
-                    summary_output = gr.Textbox(
-                        label="Policy Summary & Key Points",
-                        lines=20
-                    )
-
+                    summary_output = gr.Textbox(label="Policy Summary & Key Points", lines=20, elem_id="summary_box")
+                    summary_copy = gr.HTML("""
+                        <button onclick="navigator.clipboard.writeText(
+                            document.querySelector('#summary_box textarea').value)"> Copy</button>
+                    """)
             summarize_btn.click(
                 policy_summarization,
                 inputs=[pdf_upload, policy_text_input],
@@ -148,7 +133,7 @@ with gr.Blocks() as app:
             )
 
         # Tab 3: Carbon Footprint Estimator
-        with gr.TabItem("Carbon Footprint Estimator"):
+        with gr.TabItem("𝘾𝙖𝙧𝙗𝙤𝙣 𝙈𝙚𝙩𝙚𝙧"):
             with gr.Row():
                 with gr.Column():
                     activity_input = gr.Textbox(
@@ -157,10 +142,12 @@ with gr.Blocks() as app:
                         lines=5
                     )
                     footprint_btn = gr.Button("Estimate Carbon Footprint")
-
                 with gr.Column():
-                    footprint_output = gr.Textbox(label="Carbon Footprint & Suggestions", lines=15)
-
+                    footprint_output = gr.Textbox(label="Carbon Footprint & Suggestions", lines=10, elem_id="footprint_box")
+                    footprint_copy = gr.HTML("""
+                        <button onclick="navigator.clipboard.writeText(
+                            document.querySelector('#footprint_box textarea').value)"> Copy</button>
+                    """)
             footprint_btn.click(
                 carbon_footprint_estimator,
                 inputs=activity_input,
@@ -168,7 +155,7 @@ with gr.Blocks() as app:
             )
 
         # Tab 4: Green Technology Ideas
-        with gr.TabItem("Green Technology Ideas"):
+        with gr.TabItem("𝙀𝙘𝙤𝙏𝙚𝙘𝙝 𝙎𝙥𝙖𝙧𝙠𝙨"):
             with gr.Row():
                 with gr.Column():
                     sector_input = gr.Textbox(
@@ -177,10 +164,12 @@ with gr.Blocks() as app:
                         lines=2
                     )
                     ideas_btn = gr.Button("Generate Green Tech Ideas")
-
                 with gr.Column():
-                    ideas_output = gr.Textbox(label="Eco-Friendly Innovation Ideas", lines=15)
-
+                    ideas_output = gr.Textbox(label="Eco-Friendly Innovation Ideas", lines=10, elem_id="ideas_box")
+                    ideas_copy = gr.HTML("""
+                        <button onclick="navigator.clipboard.writeText(
+                            document.querySelector('#ideas_box textarea').value)"> Copy</button>
+                    """)
             ideas_btn.click(
                 green_tech_ideas,
                 inputs=sector_input,
